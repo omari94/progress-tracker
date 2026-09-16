@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ProgressJournal — Sign in</title>
+<style>
+  :root {
+    --bg: #f8f3e7;
+    --paper: #ffffff;
+    --ink: #2f2b24;
+    --ink-soft: #6b6558;
+    --ink-faint: #9c9587;
+    --line: #ece5d5;
+    --accent: #4c6fff;
+    --accent-hover: #3959e6;
+    --good: #1f9d55;
+    --bad: #e5484d;
+    --bad-soft: #fdeceb;
+    --shadow: 0 1px 2px rgba(47,43,36,.04), 0 10px 28px rgba(47,43,36,.08);
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 400px;
+    padding: 40px 36px 36px;
+  }
+
+  .brandmark {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink-soft);
+    font-size: 12px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+  .brandmark .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex: none;
+  }
+
+  h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    letter-spacing: -.01em;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-bottom: 28px;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    font: inherit;
+    font-size: 14px;
+    padding: 9px 0;
+    color: var(--ink-faint);
+    cursor: pointer;
+    transition: .14s;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  .tab-btn:not(.active):hover {
+    background: #f4f1e8;
+    color: var(--ink);
+  }
+
+  /* Form */
+  .form-group {
+    margin-bottom: 16px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    font: inherit;
+    font-size: 15px;
+    padding: 11px 13px;
+    border: 1.5px solid var(--line);
+    border-radius: 9px;
+    color: var(--ink);
+    background: var(--bg);
+    transition: border-color .14s;
+    outline: none;
+  }
+  input:focus {
+    border-color: var(--accent);
+    background: #fff;
+  }
+  input.error {
+    border-color: var(--bad);
+    background: var(--bad-soft);
+  }
+
+  .field-hint {
+    font-size: 12px;
+    color: var(--ink-faint);
+    margin-top: 5px;
+  }
+
+  .error-msg {
+    background: var(--bad-soft);
+    color: var(--bad);
+    border: 1px solid #f5c4c4;
+    border-radius: 8px;
+    padding: 10px 13px;
+    font-size: 13.5px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  .btn-submit {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 13px;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .14s;
+    margin-top: 4px;
+  }
+  .btn-submit:hover { background: var(--accent-hover); }
+  .btn-submit:disabled { opacity: .6; cursor: default; }
+
+  .divider {
+    text-align: center;
+    color: var(--ink-faint);
+    font-size: 12px;
+    margin: 20px 0;
+    position: relative;
+  }
+  .divider::before, .divider::after {
+    content: "";
+    position: absolute;
+    top: 50%; width: calc(50% - 28px);
+    height: 1px;
+    background: var(--line);
+  }
+  .divider::before { left: 0; }
+  .divider::after { right: 0; }
+
+  .footnote {
+    font-size: 12px;
+    color: var(--ink-faint);
+    text-align: center;
+    margin-top: 20px;
+  }
+
+  /* Panel visibility */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  @media (max-width: 440px) {
+    .card { padding: 32px 20px 24px; }
+    h1 { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="brandmark"><span class="dot"></span>ProgressJournal · Monthly Review</div>
+  <h1>Welcome back</h1>
+  <p class="subtitle">Sign in to access your private journal.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')" role="tab" aria-selected="true">Sign in</button>
+    <button class="tab-btn" id="tabRegister" onclick="switchTab('register')" role="tab" aria-selected="false">Create account</button>
+  </div>
+
+  <!-- Login panel -->
+  <div class="panel active" id="panelLogin">
+    <div class="error-msg" id="loginErr"></div>
+    <div class="form-group">
+      <label for="loginUser">Username</label>
+      <input type="text" id="loginUser" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="your-username" />
+    </div>
+    <div class="form-group">
+      <label for="loginPass">Password</label>
+      <input type="password" id="loginPass" autocomplete="current-password" placeholder="••••••••" />
+    </div>
+    <button class="btn-submit" id="loginBtn" onclick="doLogin()">Sign in</button>
+  </div>
+
+  <!-- Register panel -->
+  <div class="panel" id="panelRegister">
+    <div class="error-msg" id="regErr"></div>
+    <div class="form-group">
+      <label for="regUser">Choose a username</label>
+      <input type="text" id="regUser" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="min. 3 characters" />
+      <div class="field-hint">Letters, numbers, underscores only recommended.</div>
+    </div>
+    <div class="form-group">
+      <label for="regPass">Password</label>
+      <input type="password" id="regPass" autocomplete="new-password" placeholder="min. 6 characters" />
+    </div>
+    <div class="form-group">
+      <label for="regPass2">Confirm password</label>
+      <input type="password" id="regPass2" autocomplete="new-password" placeholder="repeat password" />
+    </div>
+    <button class="btn-submit" id="regBtn" onclick="doRegister()">Create account</button>
+  </div>
+
+  <div class="footnote">Your data stays on this server. Nothing is shared externally.</div>
+</div>
+
+<script>
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('panelLogin').classList.toggle('active', isLogin);
+  document.getElementById('panelRegister').classList.toggle('active', !isLogin);
+  document.getElementById('tabLogin').classList.toggle('active', isLogin);
+  document.getElementById('tabRegister').classList.toggle('active', !isLogin);
+  clearErrors();
+}
+
+function clearErrors() {
+  ['loginErr','regErr'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('show');
+    el.textContent = '';
+  });
+  document.querySelectorAll('input').forEach(i => i.classList.remove('error'));
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+async function doLogin() {
+  clearErrors();
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  if (!username || !password) {
+    showError('loginErr', 'Please enter your username and password.');
+    return;
+  }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      window.location.href = '/';
+    } else {
+      showError('loginErr', data.error || 'Login failed.');
+      document.getElementById('loginPass').classList.add('error');
+    }
+  } catch(e) {
+    showError('loginErr', 'Network error — please try again.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+}
+
+async function doRegister() {
+  clearErrors();
+  const username = document.getElementById('regUser').value.trim();
+  const password = document.getElementById('regPass').value;
+  const password2 = document.getElementById('regPass2').value;
+  if (!username || username.length < 3) {
+    showError('regErr', 'Username must be at least 3 characters.');
+    document.getElementById('regUser').classList.add('error');
+    return;
+  }
+  if (!password || password.length < 6) {
+    showError('regErr', 'Password must be at least 6 characters.');
+    document.getElementById('regPass').classList.add('error');
+    return;
+  }
+  if (password !== password2) {
+    showError('regErr', 'Passwords do not match.');
+    document.getElementById('regPass2').classList.add('error');
+    return;
+  }
+  const btn = document.getElementById('regBtn');
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      window.location.href = '/';
+    } else {
+      showError('regErr', data.error || 'Registration failed.');
+    }
+  } catch(e) {
+    showError('regErr', 'Network error — please try again.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Create account';
+  }
+}
+
+// Allow Enter key to submit
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const loginActive = document.getElementById('panelLogin').classList.contains('active');
+  if (loginActive) doLogin(); else doRegister();
+});
+</script>
+</body>
+</html>

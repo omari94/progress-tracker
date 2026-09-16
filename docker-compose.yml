@@ -1,0 +1,13 @@
+services:
+  tracker:
+    build: .
+    restart: always
+    ports:
+      - "8090:8090"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    volumes:
+      - tracker_data:/app/data
+
+volumes:
+  tracker_data:

@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ProgressJournal AI — Monthly Review</title>
+<style>
+  :root {
+    --bg: #f8f3e7;
+    --paper: #ffffff;
+    --ink: #2f2b24;
+    --ink-soft: #6b6558;
+    --ink-faint: #9c9587;
+    --line: #ece5d5;
+    --line-soft: #f4efe3;
+
+    --accent: #4c6fff;
+    --accent-soft: rgba(76,111,255,.08);
+    --teal: #17b8a6;
+    --orange: #f2994a;
+    --purple: #8b5cf6;
+    --blue: #4c6fff;
+
+    --good: #1f9d55;
+    --good-soft: #e7f7ec;
+    --warn: #f2994a;
+    --warn-soft: #fdf0e3;
+    --bad: #e5484d;
+    --bad-soft: #fdeceb;
+
+    --shadow: 0 1px 2px rgba(47,43,36,.04), 0 10px 28px rgba(47,43,36,.06);
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5; -webkit-font-smoothing: antialiased;
+  }
+  .serif { font-family: Georgia, "Times New Roman", serif; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  button { font: inherit; cursor: pointer; }
+  a { color: var(--accent); }
+
+  /* page = main + right rail */
+  .page { max-width: 1320px; margin: 0 auto; padding: 34px 28px 60px; display: grid; grid-template-columns: 1fr 92px; gap: 26px; align-items: start; }
+
+  /* ---- Header ---- */
+  .brandmark { display: flex; align-items: center; gap: 8px; color: var(--ink-soft); font-size: 13px; margin-bottom: 14px; letter-spacing: .02em; }
+  .brandmark .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+  h1.title { font-size: 40px; font-weight: 400; margin: 2px 0 4px; letter-spacing: -.01em; }
+  h1.title .yr { color: var(--ink-faint); }
+  .private-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-soft); }
+
+  /* month strip */
+  .month-strip { display: flex; gap: 5px; margin: 18px 0 22px; flex-wrap: wrap; }
+  .m-chip { border: 1px solid var(--line); background: var(--paper); color: var(--ink-soft); border-radius: 8px; padding: 6px 11px; font-size: 12.5px; transition: .14s; }
+  .m-chip:hover:not(.empty) { border-color: #cfd3e6; color: var(--ink); }
+  .m-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  .m-chip.empty { opacity: .4; cursor: not-allowed; }
+
+  /* ---- Right rail (GitHub-style year picker) ---- */
+  .rail { position: sticky; top: 34px; display: flex; flex-direction: column; gap: 4px; }
+  .yr-btn { text-align: left; background: none; border: none; color: var(--ink-faint); font-size: 15px; padding: 9px 14px; border-radius: 8px; transition: .14s; }
+  .yr-btn:hover { background: var(--line-soft); color: var(--ink); }
+  .yr-btn.active { background: var(--accent); color: #fff; font-weight: 600; }
+
+  /* ---- content columns ---- */
+  .cols { display: grid; grid-template-columns: 264px 1fr; gap: 22px; align-items: start; }
+
+  /* ---- Sidebar modules ---- */
+  .side-module { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 17px 16px; box-shadow: var(--shadow); margin-bottom: 18px; }
+  .side-module h3 { font-size: 14.5px; font-weight: 600; margin: 0 0 3px; display: flex; align-items: center; justify-content: space-between; }
+  .side-module .lock { font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 20px; }
+  .side-module p.hint { font-size: 12px; color: var(--ink-faint); margin: 2px 0 12px; line-height: 1.45; }
+
+  ul.sources { list-style: none; margin: 0; padding: 0; }
+  li.source { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line-soft); }
+  li.source:first-child { border-top: none; }
+  .src-icon { width: 26px; height: 26px; border-radius: 7px; flex: none; display: grid; place-items: center; }
+  .src-icon svg { width: 16px; height: 16px; display: block; }
+  .src-name { flex: 1; font-size: 13px; }
+  .src-name .sub { font-size: 10.5px; color: var(--ink-faint); }
+  li.source.off .src-icon { filter: grayscale(1); opacity: .5; }
+  li.source.off .src-name { color: var(--ink-faint); }
+  .soon-tag { font-size: 9.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-faint); background: var(--line-soft); padding: 3px 7px; border-radius: 20px; }
+  .sw { width: 32px; height: 18px; border-radius: 20px; background: var(--line); position: relative; flex: none; cursor: pointer; border: none; padding: 0; transition: .18s; }
+  .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: .18s; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+  .sw[aria-pressed="true"] { background: var(--accent); }
+  .sw[aria-pressed="true"]::after { left: 16px; }
+  .sw.soon { background: var(--line-soft); cursor: default; }
+  .sw.soon::after { background: #d8d1c6; }
+
+  .endpoint-row { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+  .endpoint-row label { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-bottom: 5px; }
+  .endpoint-row input { width: 100%; font: inherit; font-size: 12px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--bg); }
+  .endpoint-row .model-hint { font-size: 10.5px; color: var(--ink-faint); margin-top: 5px; }
+
+  ul.share-toggles { list-style: none; margin: 4px 0 14px; padding: 0; }
+  li.share-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-top: 1px solid var(--line-soft); font-size: 13px; }
+  li.share-row:first-child { border-top: none; }
+  .check-toggle { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line); background: none; display: grid; place-items: center; flex: none; color: transparent; font-size: 11px; }
+  .check-toggle[aria-pressed="true"] { background: var(--good); border-color: var(--good); color: #fff; }
+  .btn-link { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 9px; padding: 10px 12px; font-size: 13.5px; display: flex; align-items: center; justify-content: center; gap: 7px; }
+  .btn-link:hover { background: #3959e6; }
+  .side-module .footnote { font-size: 11px; color: var(--ink-faint); text-align: center; margin-top: 8px; }
+
+  /* ---- Main ---- */
+  .main { min-width: 0; }
+
+  .ai-card { background: var(--paper); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px; box-shadow: var(--shadow); }
+  .ai-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 10px; }
+  .ai-badge { display: flex; align-items: center; gap: 6px; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+  .ai-actions { display: flex; gap: 8px; }
+  .btn { border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: 6px 13px; border-radius: 8px; font-size: 13px; }
+  .btn:hover { border-color: #cfd3e6; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .ai-quote { font-family: Georgia, serif; font-style: italic; font-size: 18px; line-height: 1.6; margin: 0 0 10px; }
+  .ai-foot { font-size: 12px; color: var(--ink-faint); }
+
+  .glance { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+  .glance-chip { border-radius: 14px; padding: 16px 18px; color: #fff; box-shadow: var(--shadow); }
+  .glance-chip .glance-num { font-size: 26px; font-weight: 700; line-height: 1; }
+  .glance-chip .glance-lab { font-size: 12.5px; opacity: .92; margin-top: 5px; }
+  .c-teal { background: var(--teal); } .c-orange { background: var(--orange); }
+  .c-blue { background: var(--blue); } .c-red { background: var(--bad); }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
+
+  .section { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow); margin-bottom: 16px; }
+  .row-2 > .section, .row-3 > .section { margin-bottom: 0; }
+  .sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; gap: 8px; }
+  .sec-title { display: flex; align-items: center; gap: 9px; font-size: 17px; font-weight: 600; }
+  .sec-title .glyph { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; font-size: 12px; color: #fff; flex: none; }
+  .g-teal { background: var(--teal); } .g-orange { background: var(--orange); }
+  .g-blue { background: var(--blue); } .g-purple { background: var(--purple); }
+  .g-red { background: var(--bad); } .g-dark { background: #3a3530; }
+  .sec-meta { font-size: 12px; color: var(--ink-faint); white-space: nowrap; }
+  .you-tag { font-size: 10px; letter-spacing: .03em; text-transform: uppercase; color: var(--purple); background: rgba(139,92,246,.1); padding: 2px 8px; border-radius: 20px; }
+
+  ul.items { list-style: none; margin: 10px 0 0; padding: 0; }
+  li.item { position: relative; padding: 10px 0 10px 18px; border-top: 1px solid var(--line-soft); }
+  li.item:first-child { border-top: none; }
+  li.item::before { content: ""; position: absolute; left: 2px; top: 17px; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-faint); }
+  li.item .txt { font-size: 14.5px; }
+  li.item .txt[contenteditable="true"] { outline: none; background: #fbf8ee; box-shadow: 0 0 0 2px rgba(76,111,255,.2); border-radius: 4px; padding: 2px 5px; margin: -2px -5px; }
+  li.item .meta { font-size: 12px; color: var(--ink-faint); margin-top: 4px; }
+  li.item .meta .tag { background: var(--line-soft); color: var(--ink-soft); border-radius: 5px; padding: 1px 7px; font-size: 11px; margin-right: 4px; }
+
+  .status { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+  .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
+  .status.good { background: var(--good-soft); color: var(--good); } .status.good::before { background: var(--good); }
+  .status.warn { background: var(--warn-soft); color: var(--warn); } .status.warn::before { background: var(--warn); }
+  .status.bad { background: var(--bad-soft); color: var(--bad); } .status.bad::before { background: var(--bad); }
+
+  .goal { padding: 12px 0; border-top: 1px solid var(--line-soft); }
+  .goal:first-child { padding-top: 6px; border-top: none; }
+  .goal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .goal-name { font-size: 14.5px; font-weight: 600; }
+  .goal-bar-wrap { height: 8px; border-radius: 6px; background: var(--line-soft); overflow: hidden; }
+  .goal-bar { height: 100%; border-radius: 6px; background: var(--blue); }
+  .goal-bar.warn { background: var(--warn); }
+  .goal-foot { font-size: 12px; color: var(--ink-soft); margin-top: 6px; }
+
+  .time-row { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line-soft); }
+  .time-row:first-of-type { border-top: none; }
+  .time-label { font-size: 13.5px; }
+  .bar-wrap { height: 18px; border-radius: 6px; background: var(--line-soft); overflow: hidden; }
+  .bar-actual { height: 100%; background: var(--purple); opacity: .85; border-radius: 6px; }
+  .time-nums { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+  .tl-item { display: flex; align-items: baseline; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line-soft); }
+  .tl-item:first-child { border-top: none; }
+  .tl-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--purple); flex: none; align-self: center; }
+  .tl-dot.flag { background: var(--warn); }
+  .tl-label { font-size: 13.5px; }
+  .tl-meta { font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; }
+
+  /* skeleton / states */
+  .skeleton .txt, .skeleton .ai-quote { color: transparent !important; }
+  .skeleton .sk { display: inline-block; height: .8em; background: linear-gradient(90deg, var(--line-soft), #efe9db, var(--line-soft)); background-size: 200% 100%; border-radius: 5px; animation: sh 1.1s infinite; }
+  @keyframes sh { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  .empty-hint { font-size: 13px; color: var(--ink-faint); font-style: italic; padding: 8px 0; }
+
+  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fdfdf8; padding: 11px 18px; border-radius: 10px; font-size: 13.5px; opacity: 0; pointer-events: none; transition: .25s; z-index: 60; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-width: 90vw; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.err { background: #8a2b28; }
+
+  @media (max-width: 1080px) {
+    .page { grid-template-columns: 1fr; }
+    .rail { position: static; flex-direction: row; flex-wrap: wrap; order: -1; }
+    .cols { grid-template-columns: 1fr; }
+    /* sidebar moves above main content on tablet/mobile */
+    .cols aside { order: -1; }
+    .row-2, .row-3, .glance { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 640px) {
+    .page { padding: 20px 16px 48px; }
+    .glance, .row-2, .row-3 { grid-template-columns: 1fr; }
+    h1.title { font-size: 26px; }
+    .month-strip { gap: 4px; }
+    .m-chip { padding: 5px 9px; font-size: 12px; }
+    .side-module { margin-bottom: 12px; }
+    /* stack side modules horizontally on mobile where they fit */
+    .cols aside { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .cols aside .side-module { margin-bottom: 0; }
+    @media (max-width: 480px) {
+      .cols aside { grid-template-columns: 1fr; }
+    }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="main">
+    <div class="brandmark"><span class="dot"></span> PROGRESSJOURNAL · MONTHLY REVIEW</div>
+    <div class="header-row">
+      <div>
+        <h1 class="title serif" id="monthTitle">September <span class="yr">2026</span></h1>
+        <div class="private-tag">🔒 Private by default</div>
+      </div>
+      <a href="/logout" style="font-size:13px;color:var(--ink-faint);text-decoration:none;padding:7px 14px;border:1px solid var(--line);border-radius:8px;align-self:flex-start;margin-top:6px;display:inline-block;" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--ink-faint)'">Sign out</a>
+    </div>
+
+    <div class="month-strip" id="monthStrip"></div>
+
+    <div class="cols">
+      <!-- Sidebar -->
+      <aside>
+        <div class="side-module">
+          <h3>Connected sources</h3>
+          <p class="hint">You decide what shapes this reflection. Turn a source off and regenerate — it drops out of the digest.</p>
+          <ul class="sources" id="sourceList">
+            <li class="source" data-src="github">
+              <div class="src-icon" style="background:#24292f"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></div>
+              <div class="src-name">GitHub<div class="sub">Commits, PRs, reviews</div></div>
+              <button class="sw" aria-pressed="true" aria-label="GitHub enabled" onclick="toggleSrc(this,'github','GitHub')"></button>
+            </li>
+            <li class="source" data-src="jira">
+              <div class="src-icon" style="background:#deebff"><svg viewBox="0 0 24 24" fill="#0052CC"><path d="M11.571 11.513H0a5.218 5.218 0 0 0 5.232 5.215h2.13v2.057A5.215 5.215 0 0 0 12.575 24V12.518a1.005 1.005 0 0 0-1.005-1.005zm5.723-5.756H5.736a5.215 5.215 0 0 0 5.215 5.214h2.129v2.058a5.218 5.218 0 0 0 5.215 5.214V6.758a1.001 1.001 0 0 0-1.001-1.001zM23.013 0H11.455a5.215 5.215 0 0 0 5.215 5.215h2.129v2.057A5.215 5.215 0 0 0 24 12.483V1.005A1.001 1.001 0 0 0 23.013 0Z"/></svg></div>
+              <div class="src-name">Jira<div class="sub">Tickets, status, estimates</div></div>
+              <button class="sw" aria-pressed="true" aria-label="Jira enabled" onclick="toggleSrc(this,'jira','Jira')"></button>
+            </li>
+            <li class="source" data-src="slack">
+              <div class="src-icon" style="background:#f4ecf4"><svg viewBox="0 0 256 256"><path d="M53.841 161.321c0 14.831-11.987 26.819-26.819 26.819C12.19 188.14.203 176.152.203 161.321c0-14.832 11.987-26.82 26.819-26.82h26.819v26.82Zm13.41 0c0-14.832 11.987-26.82 26.819-26.82 14.831 0 26.819 11.988 26.819 26.82v67.047c0 14.832-11.988 26.82-26.82 26.82-14.83 0-26.818-11.988-26.818-26.82v-67.047Z" fill="#E01E5A"/><path d="M94.07 53.638c-14.832 0-26.82-11.987-26.82-26.819C67.25 11.987 79.239 0 94.07 0c14.831 0 26.819 11.987 26.819 26.819v26.819H94.07Zm0 13.613c14.831 0 26.819 11.987 26.819 26.819 0 14.831-11.988 26.819-26.82 26.819H26.82C11.987 120.889 0 108.901 0 94.07c0-14.832 11.987-26.82 26.819-26.82H94.07Z" fill="#36C5F0"/><path d="M201.549 94.07c0-14.832 11.988-26.82 26.82-26.82 14.83 0 26.818 11.988 26.818 26.82 0 14.831-11.987 26.819-26.819 26.819h-26.819V94.07Zm-13.41 0c0 14.831-11.987 26.819-26.819 26.819-14.831 0-26.819-11.988-26.819-26.82V26.82C134.501 11.987 146.489 0 161.32 0c14.832 0 26.82 11.987 26.82 26.819V94.07Z" fill="#2EB67D"/><path d="M161.32 201.549c14.832 0 26.82 11.988 26.82 26.82 0 14.83-11.988 26.818-26.82 26.818-14.831 0-26.819-11.987-26.819-26.819v-26.819h26.82Zm0-13.41c-14.831 0-26.819-11.987-26.819-26.819 0-14.831 11.988-26.819 26.82-26.819h67.25c14.832 0 26.82 11.988 26.82 26.82 0 14.83-11.988 26.818-26.82 26.818H161.32Z" fill="#ECB22E"/></svg></div>
+              <div class="src-name">Slack<div class="sub">Public channels · DMs off</div></div>
+              <button class="sw" aria-pressed="true" aria-label="Slack enabled" onclick="toggleSrc(this,'slack','Slack')"></button>
+            </li>
+            <li class="source off" data-src="notion">
+              <div class="src-icon" style="background:#f2f1ee"><svg viewBox="0 0 24 24" fill="#000"><path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.933c-.98.047-1.448-.093-1.962-.746l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.416-1.632z"/></svg></div>
+              <div class="src-name">Notion<div class="sub">Docs you edited</div></div>
+              <span class="soon-tag">Soon</span>
+            </li>
+            <li class="source off" data-src="outlook">
+              <div class="src-icon" style="background:#e6f0f9"><svg viewBox="0 0 24 24" fill="none" stroke="#0a5ca8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m3 6 9 6 9-6"/></svg></div>
+              <div class="src-name">Outlook<div class="sub">Meetings, focus time</div></div>
+              <span class="soon-tag">Soon</span>
+            </li>
+          </ul>
+          <div class="endpoint-row">
+            <label>AI Engine</label>
+            <div style="display:flex;align-items:center;gap:7px;padding:6px 0;">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--good);flex:none;"></span>
+              <span style="font-size:13px;color:var(--ink);">Groq · qwen3.8-27b</span>
+            </div>
+            <div class="model-hint">Fast inference, server-side. Your data stays private.</div>
+          </div>
+        </div>
+
+        <div class="side-module">
+          <h3>Export</h3>
+          <p class="hint">Copy this month's digest as plain text to paste into docs, email, or a note.</p>
+          <button class="btn-link" onclick="exportDigest()">⇢ Copy to clipboard</button>
+          <div class="footnote" id="exportNote" style="margin-top:8px;min-height:16px;"></div>
+        </div>
+      </aside>
+
+      <!-- Main column -->
+      <main class="main">
+
+        <div class="ai-card" id="aiCard">
+          <div class="ai-head">
+            <span class="ai-badge">✦ AI-drafted summary</span>
+            <div class="ai-actions">
+              <button class="btn" id="editBtn" onclick="toggleEditAll()">Edit</button>
+              <button class="btn" id="regenBtn" onclick="generate()">↻ Regenerate</button>
+            </div>
+          </div>
+          <p class="ai-quote" id="aiQuote">Click “Regenerate” to draft this month from your connected sources.</p>
+          <div class="ai-foot" id="aiFoot">Generated by Groq (llama-3.3-70b) from the connected sources. Review and edit before sharing.</div>
+        </div>
+
+        <div class="glance" id="glance">
+          <div class="glance-chip c-teal"><div class="glance-num" id="stWins">–</div><div class="glance-lab">Wins</div></div>
+          <div class="glance-chip c-blue"><div class="glance-num" id="stProg">–</div><div class="glance-lab">In progress</div></div>
+          <div class="glance-chip c-orange"><div class="glance-num" id="stColl">–</div><div class="glance-lab">Collaborations</div></div>
+          <div class="glance-chip c-red"><div class="glance-num" id="stStall">–</div><div class="glance-lab">Stalls</div></div>
+        </div>
+
+        <div class="row-2">
+          <section class="section">
+            <div class="sec-head"><div class="sec-title"><span class="glyph g-teal">🏆</span>Wins</div><span class="sec-meta" id="mWins"></span></div>
+            <ul class="items" id="listWins"></ul>
+          </section>
+          <section class="section">
+            <div class="sec-head"><div class="sec-title"><span class="glyph g-blue">◐</span>In progress</div><span class="sec-meta" id="mProg"></span></div>
+            <ul class="items" id="listProg"></ul>
+          </section>
+        </div>
+
+        <div class="row-2">
+          <section class="section">
+            <div class="sec-head"><div class="sec-title"><span class="glyph g-red">⚠️</span>Stalls</div><span class="sec-meta" id="mStall"></span></div>
+            <ul class="items" id="listStall"></ul>
+          </section>
+          <section class="section">
+            <div class="sec-head"><div class="sec-title"><span class="glyph g-orange">🤝</span>Collaboration</div><span class="sec-meta" id="mColl"></span></div>
+            <ul class="items" id="listColl"></ul>
+          </section>
+        </div>
+
+        <div class="row-2">
+          <section class="section">
+            <div class="sec-head"><div class="sec-title"><span class="glyph g-purple">◑</span>Where time went</div><span class="sec-meta">approx.</span></div>
+            <div id="listTime"></div>
+          </section>
+          <section class="section">
+            <div class="sec-head"><div class="sec-title"><span class="glyph" style="background:var(--ink-faint)">◷</span>Activity timeline</div></div>
+            <div id="listTimeline"></div>
+          </section>
+        </div>
+
+        <div class="row-3">
+          <section class="section">
+            <div class="sec-head"><div class="sec-title"><span class="glyph g-blue">📈</span>Goals</div><span class="you-tag">suggested · edit</span></div>
+            <div id="listGoals"></div>
+          </section>
+          <section class="section">
+            <div class="sec-head"><div class="sec-title"><span class="glyph g-purple">📚</span>Things learned</div><span class="you-tag">suggested · edit</span></div>
+            <ul class="items" id="listLearned"></ul>
+          </section>
+          <section class="section">
+            <div class="sec-head"><div class="sec-title"><span class="glyph g-dark">🔜</span>Next month</div><span class="you-tag">suggested · edit</span></div>
+            <ul class="items" id="listNext"></ul>
+          </section>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Right rail: GitHub-style year picker -->
+  <nav class="rail" id="rail"></nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   MOCK SOURCE DATA — shaped like each tool's real API output.
+   In production these come from MCP connections; here they're
+   fixtures so the whole pipeline is real except the connectors.
+   ============================================================ */
+const SOURCES = {
+  github: {
+    user: "you",
+    commits: [
+      { sha: "a1f3", repo: "acme/billing", message: "Server-side token rotation for auth refactor", date: "2026-09-04" },
+      { sha: "b2c9", repo: "acme/billing", message: "Add retry queue for webhook delivery", date: "2026-09-11" },
+      { sha: "c8d1", repo: "acme/platform", message: "Isolate flaky component tests with shared fixture", date: "2026-09-06" },
+      { sha: "d4e7", repo: "acme/platform", message: "Bump CI cache, cut build time", date: "2026-09-07" }
+    ],
+    pulls: [
+      { number: 412, repo: "acme/billing", title: "Auth refactor: server-side token rotation", state: "merged", created_at: "2026-09-02", merged_at: "2026-09-14", additions: 1210, deletions: 840, reviewers: ["r.okafor"] },
+      { number: 431, repo: "acme/platform", title: "Rate-limiting middleware", state: "open", created_at: "2026-09-25", merged_at: null, review_comments: 2, additions: 320, deletions: 40 },
+      { number: 398, repo: "acme/data", title: "Data export pipeline", state: "open", created_at: "2026-08-16", merged_at: null, review_comments: 0, last_activity: "2026-09-03", additions: 900, deletions: 120 }
+    ],
+    issues: [
+      { number: 205, repo: "acme/platform", title: "Component tests flaky, blocking releases", state: "closed", closed_at: "2026-09-06" }
+    ],
+    reviews: [
+      { pr: "acme/platform#421", author: "jules", date: "2026-09-09", state: "approved" },
+      { pr: "acme/growth#77", author: "mina", date: "2026-09-17", state: "changes_requested" },
+      { pr: "acme/platform#425", author: "jules", date: "2026-09-19", state: "approved" }
+    ]
+  },
+  jira: {
+    issues: [
+      { key: "BILL-201", summary: "Migrate invoice totals to new tax engine", status: "Done", updated: "2026-09-05", project: "Billing", labels: ["billing"], story_points: 5 },
+      { key: "BILL-214", summary: "Backfill Q3 carry-over tickets", status: "Done", updated: "2026-09-12", project: "Billing", labels: ["billing"], story_points: 8 },
+      { key: "BILL-220", summary: "Webhook retry logic", status: "In Progress", updated: "2026-09-27", project: "Billing", labels: ["billing","infra"], story_points: 5 },
+      { key: "PROJ-88", summary: "SSO for admin console", status: "In Progress", updated: "2026-09-02", project: "Platform", labels: ["auth"], story_points: 8 },
+      { key: "PAY-42", summary: "Payments webhooks intermittently failing", status: "Blocked", updated: "2026-09-21", project: "Payments", labels: ["incident"], assignee: "r.okafor", story_points: 3 },
+      { key: "DATA-19", summary: "Analytics schema approval", status: "In Review", updated: "2026-09-19", project: "Data", labels: ["analytics"], assignee: "mina", story_points: 3 }
+    ]
+  },
+  slack: {
+    messages: [
+      { channel: "eng-platform", date: "2026-09-08", text: "Unblocked the mobile team on the shared session API — walked through token rotation in the design refinement." },
+      { channel: "incidents", date: "2026-09-06", text: "Ran the retro for the Sep 5 outage; wrote up follow-up actions." },
+      { channel: "billing", date: "2026-09-13", text: "Cleared the Q3 billing carry-over, BILL-201 through 214 done." },
+      { channel: "eng-platform", date: "2026-09-18", text: "Led the platform roadmap workshop — settled on Q4 priorities." },
+      { channel: "team", date: "2026-09-20", text: "Mentored Jules through their first production merge." }
+    ]
+  }
+};
+
+/* schema the LLM must fill — see DIGEST_SCHEMA below (enforced by LM Studio) */
+
+const SYSTEM_PROMPT = `You are the curation engine for a personal monthly progress tracker for a remote worker.
+
+The objective sections (wins, inProgress, stalls, collaboration, timeline, timeAllocation) have already been assembled deterministically from the raw data — you do NOT produce those.
+
+Your job is to write three things only:
+1. "summary": a single reflective first-person paragraph (3-5 sentences) that captures the feel of the month — what moved, what stalled, what mattered. Ground it in the data provided. No invented facts.
+2. "goals": 2-4 suggested goals inferred from epics/labels/backlog, each with a name, status ("on-track" or "at-risk"), a % progress estimate, and a short note.
+3. "learned": 2-3 short first-person lessons inferred from what happened — things that would be worth remembering.
+4. "nextMonth": 2-4 suggested next-month priorities inferred from open/blocked work. Each has a short "due" like "Oct 8" and owner "You".
+
+Tone: reflective, plain, first-person. No corporate filler. No invented details.`;
+
+/* Slim schema — LLM only writes summary + subjective suggestions */
+const DIGEST_SCHEMA = {
+  name: "monthly_digest",
+  strict: true,
+  schema: {
+    type: "object",
+    properties: {
+      summary:    { type: "string" },
+      goals:      { type:"array", items:{ type:"object", properties:{ name:{type:"string"}, status:{type:"string"}, pct:{type:"number"}, note:{type:"string"} }, required:["name","status","pct","note"] } },
+      learned:    { type:"array", items:{ type:"object", properties:{ text:{type:"string"} }, required:["text"] } },
+      nextMonth:  { type:"array", items:{ type:"object", properties:{ text:{type:"string"}, owner:{type:"string"}, due:{type:"string"} }, required:["text","owner","due"] } }
+    },
+    required: ["summary","goals","learned","nextMonth"]
+  }
+};
+
+/* ============================================================
+   JS ASSEMBLY — deterministic from enabled sources.
+   These sections are always exactly correct regardless of model.
+   ============================================================ */
+function assembleSections(ctx){
+  const wins = [], inProgress = [], stalls = [], collab = [], timeline = [];
+  const timeMap = {}; // project → story points / commit count
+
+  // GitHub
+  if(ctx.github){
+    (ctx.github.pulls||[]).forEach(p=>{
+      if(p.state==='merged'){
+        wins.push({ text: p.title, source: `GitHub · PR #${p.number}` });
+        timeline.push({ label: `Merged: ${p.title}`, date: fmtDate(p.merged_at), source: 'GitHub', flag: false });
+        tally(timeMap, repoProject(p.repo), 2);
+      } else {
+        const idle = p.last_activity && daysSince(p.last_activity) > 10;
+        const blocked = p.review_comments === 0 && daysSince(p.created_at) > 7;
+        if(idle || blocked){
+          stalls.push({ text: `${p.title} — open ${daysSince(p.created_at)}d, no recent activity`, source: `GitHub · PR #${p.number}` });
+        } else {
+          inProgress.push({ text: p.title, source: `GitHub · PR #${p.number}` });
+        }
+        tally(timeMap, repoProject(p.repo), 1);
+      }
+    });
+    (ctx.github.reviews||[]).forEach(r=>{
+      collab.push({ text: `Reviewed ${r.pr} (${r.state.replace('_',' ')})`, source: `GitHub · review` });
+    });
+    (ctx.github.issues||[]).forEach(i=>{
+      if(i.state==='closed'){
+        wins.push({ text: i.title, source: `GitHub · issue #${i.number}` });
+        timeline.push({ label: `Closed: ${i.title}`, date: fmtDate(i.closed_at), source: 'GitHub', flag: false });
+      }
+    });
+  }
+
+  // Jira
+  if(ctx.jira){
+    (ctx.jira.issues||[]).forEach(i=>{
+      const sp = i.story_points || 1;
+      tally(timeMap, i.project, sp);
+      if(i.status==='Done'){
+        wins.push({ text: i.summary, source: `Jira · ${i.key}` });
+        timeline.push({ label: i.summary, date: fmtDate(i.updated), source: 'Jira', flag: false });
+      } else if(i.status==='In Progress'){
+        inProgress.push({ text: i.summary, source: `Jira · ${i.key}` });
+      } else if(i.status==='Blocked' || i.status==='In Review'){
+        stalls.push({ text: `${i.summary} — ${i.status.toLowerCase()} for ${daysSince(i.updated)}d`, source: `Jira · ${i.key}` });
+        timeline.push({ label: `Blocked: ${i.summary}`, date: fmtDate(i.updated), source: 'Jira', flag: true });
+      }
+    });
+  }
+
+  // Slack
+  if(ctx.slack){
+    (ctx.slack.messages||[]).forEach(m=>{
+      collab.push({ text: m.text, source: `Slack · #${m.channel}` });
+      timeline.push({ label: m.text.slice(0,60)+(m.text.length>60?'…':''), date: fmtDate(m.date), source: 'Slack', flag: false });
+    });
+  }
+
+  // time allocation: convert tally to % array, sorted desc
+  const total = Object.values(timeMap).reduce((a,b)=>a+b,0) || 1;
+  const timeAllocation = Object.entries(timeMap)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([area,pts])=>({ area, pct: Math.round(pts/total*100) }));
+
+  // sort timeline by date
+  timeline.sort((a,b)=>a.date.localeCompare(b.date));
+
+  return { wins, inProgress, stalls, collaboration: collab, timeAllocation, timeline };
+}
+
+function repoProject(repo){ return (repo||'').split('/')[1]?.replace(/-/g,' ') || repo; }
+function tally(map, key, n){ map[key] = (map[key]||0) + n; }
+function fmtDate(s){
+  if(!s) return '?';
+  const d = new Date(s);
+  if(isNaN(d)) return s;
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function daysSince(s){
+  if(!s) return 0;
+  return Math.round((Date.now() - new Date(s))/(1000*60*60*24));
+}
+
+/* ---------- state ---------- */
+const enabled = { github: true, jira: true, slack: true };
+let editing = false;
+
+/* ---------- nav: year picker + month strip ---------- */
+const YEARS = [2026, 2025, 2024, 2023, 2022];
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const FULL = { Jan:"January",Feb:"February",Mar:"March",Apr:"April",May:"May",Jun:"June",Jul:"July",Aug:"August",Sep:"September",Oct:"October",Nov:"November",Dec:"December" };
+let curYear = 2026, curMonth = 8; // Sep index
+const HAS_DATA = { 2026: [0,1,2,3,4,5,6,7,8] }; // months with synced activity
+
+function renderRail(){
+  const rail = document.getElementById('rail');
+  rail.innerHTML = '';
+  YEARS.forEach(y=>{
+    const b = document.createElement('button');
+    b.className = 'yr-btn' + (y===curYear ? ' active':'');
+    b.textContent = y;
+    b.onclick = ()=>{ curYear = y; const has = HAS_DATA[y]||[]; curMonth = has.length ? has[has.length-1] : 8; renderRail(); renderStrip(); setTitle(); if(!has.length) clearForEmpty(); };
+    rail.appendChild(b);
+  });
+}
+function renderStrip(){
+  const strip = document.getElementById('monthStrip');
+  strip.innerHTML = '';
+  const has = HAS_DATA[curYear] || [];
+  MONTHS.forEach((m,i)=>{
+    const b = document.createElement('button');
+    const hasData = has.includes(i);
+    b.className = 'm-chip' + (i===curMonth ? ' active':'') + (hasData?'':' empty');
+    b.textContent = m;
+    if(hasData) b.onclick = ()=>{ curMonth = i; renderStrip(); setTitle(); };
+    strip.appendChild(b);
+  });
+}
+function setTitle(){
+  document.getElementById('monthTitle').innerHTML = FULL[MONTHS[curMonth]] + ' <span class="yr">'+curYear+'</span>';
+}
+function clearForEmpty(){
+  document.getElementById('aiQuote').textContent = 'No activity synced for this month yet.';
+  ['listWins','listProg','listStall','listColl','listTimeline','listGoals','listLearned','listNext'].forEach(id=>document.getElementById(id).innerHTML='');
+  document.getElementById('listTime').innerHTML='';
+  ['stWins','stProg','stColl','stStall'].forEach(id=>document.getElementById(id).textContent='0');
+}
+
+/* ---------- source toggles ---------- */
+let _generateTimer = null;
+
+function toggleSrc(sw, key, name){
+  const pressed = sw.getAttribute('aria-pressed') === 'true';
+  const next = !pressed;
+  sw.setAttribute('aria-pressed', String(next));
+  sw.closest('.source').classList.toggle('off', !next);
+  enabled[key] = next;
+  // Debounce: wait 1.2s after last toggle before calling AI
+  clearTimeout(_generateTimer);
+  _generateTimer = setTimeout(generate, 1200);
+}
+function chk(el){ el.setAttribute('aria-pressed', el.getAttribute('aria-pressed')==='true'?'false':'true'); }
+
+/* ---------- animated loading progress ---------- */
+const LOAD_STEPS = [
+  { pct: 15, msg: 'Reading your activity data…' },
+  { pct: 35, msg: 'Analysing wins and blockers…' },
+  { pct: 55, msg: 'Writing your monthly summary…' },
+  { pct: 75, msg: 'Drafting goals and next steps…' },
+  { pct: 90, msg: 'Almost there…' },
+];
+let _loadTimer = null;
+
+function startLoadingUI(btn) {
+  btn.disabled = true;
+  const card = document.getElementById('aiCard');
+  card.classList.add('skeleton');
+
+  let step = 0;
+  function tick() {
+    if (step >= LOAD_STEPS.length) return;
+    const { pct, msg } = LOAD_STEPS[step++];
+    btn.textContent = msg;
+    document.getElementById('aiQuote').innerHTML =
+      `<span style="display:flex;align-items:center;gap:10px;">` +
+      `<span style="flex:1;height:6px;border-radius:4px;background:var(--line-soft);overflow:hidden;">` +
+      `<span style="display:block;height:100%;width:${pct}%;background:var(--accent);border-radius:4px;transition:width .4s ease;"></span>` +
+      `</span><span style="font-size:13px;color:var(--ink-faint);white-space:nowrap;font-style:normal;">${msg}</span></span>`;
+    _loadTimer = setTimeout(tick, 900);
+  }
+  tick();
+}
+
+function stopLoadingUI(btn) {
+  clearTimeout(_loadTimer);
+  btn.disabled = false;
+  btn.textContent = '↻ Regenerate';
+  document.getElementById('aiCard').classList.remove('skeleton');
+}
+
+/* ---------- LLM call ---------- */
+function activeContext(){
+  const ctx = {};
+  for(const k of Object.keys(enabled)) if(enabled[k]) ctx[k] = SOURCES[k];
+  return ctx;
+}
+
+async function generate(){
+  const ctx = activeContext();
+  if(Object.keys(ctx).length === 0){ toast('Enable at least one source first.'); return; }
+
+  // Assemble objective sections immediately — correct by construction
+  const assembled = assembleSections(ctx);
+  render({ ...assembled, summary: '', goals:[], learned:[], nextMonth:[] });
+
+  const btn = document.getElementById('regenBtn');
+  startLoadingUI(btn);
+
+  try {
+    // /api/chat is a server-side proxy to Groq — API key stays on the server
+    const res = await fetch('/api/chat', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.4,
+        max_tokens: 1024,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: 'Write the summary, goals, learned, and nextMonth for ' + FULL[MONTHS[curMonth]] + ' ' + curYear + '.\n\nActivity data:\n' + JSON.stringify(ctx, null, 2) }
+        ],
+        response_format: { type: 'json_object' }
+      })
+    });
+    if(!res.ok) {
+      if (res.status === 429) {
+        // Rate limited — wait and retry once automatically
+        stopLoadingUI(btn);
+        let secs = 10;
+        const countEl = document.getElementById('aiQuote');
+        const tick = setInterval(() => {
+          countEl.textContent = `Rate limited by AI provider — retrying in ${secs}s…`;
+          secs--;
+          if (secs < 0) {
+            clearInterval(tick);
+            generate();
+          }
+        }, 1000);
+        return;
+      }
+      throw new Error('HTTP ' + res.status);
+    }
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content ?? '';
+    console.log('[digest raw]', content.slice(0,300));
+    const llm = parseDigest(content);
+    render({ ...assembled, ...llm });
+    toast('Digest generated from ' + Object.keys(ctx).length + ' source' + (Object.keys(ctx).length>1?'s':'') + '.');
+  } catch(err){
+    document.getElementById('aiQuote').textContent = buildSummary(assembled);
+    toast("AI service unavailable — showing structured data only.", true);
+    console.error(err);
+  } finally {
+    stopLoadingUI(btn);
+  }
+}
+
+/* ---------- export digest ---------- */
+function exportDigest() {
+  const month = FULL[MONTHS[curMonth]] + ' ' + curYear;
+  const lines = [`# ${month} — Monthly Review`, ''];
+
+  const summary = document.getElementById('aiQuote')?.textContent?.trim();
+  if (summary && summary !== '…thinking') {
+    lines.push('## Summary', summary, '');
+  }
+
+  function sectionText(title, listId) {
+    const items = [...document.querySelectorAll(`#${listId} .txt`)].map(el => '• ' + el.textContent.trim());
+    if (items.length) lines.push(`## ${title}`, ...items, '');
+  }
+
+  sectionText('Wins', 'listWins');
+  sectionText('In Progress', 'listProg');
+  sectionText('Stalls', 'listStall');
+  sectionText('Collaboration', 'listColl');
+  sectionText('Things Learned', 'listLearned');
+  sectionText('Next Month', 'listNext');
+
+  const text = lines.join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    const note = document.getElementById('exportNote');
+    note.textContent = '✓ Copied to clipboard';
+    note.style.color = 'var(--good)';
+    setTimeout(() => { note.textContent = ''; }, 3000);
+  }).catch(() => {
+    // fallback: open in new tab as plain text
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `review-${month.replace(' ','-')}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+function parseDigest(text){
+  let t = text.trim();
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if(fence) t = fence[1].trim();
+  const start = t.indexOf('{'), end = t.lastIndexOf('}');
+  if(start >= 0 && end > start) t = t.slice(start, end+1);
+  try {
+    return JSON.parse(t);
+  } catch(e) {
+    console.error('parseDigest JSON error:', e, '\nRaw content:\n', text);
+    throw e;
+  }
+}
+
+/* ---------- render ---------- */
+
+function esc(s){ return String(s??'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function itemRow(text, source){
+  return `<li class="item"><div class="txt" ${editing?'contenteditable="true"':''}>${esc(text)}</div>${source?`<div class="meta"><span class="tag">${esc(source)}</span></div>`:''}</li>`;
+}
+
+function buildSummary(d){
+  const wins  = (d.wins||[]).length;
+  const prog  = (d.inProgress||[]).length;
+  const stall = (d.stalls||[]).length;
+  const coll  = (d.collaboration||[]).length;
+  const winItem  = d.wins?.[0]?.text  || '';
+  const progItem = d.inProgress?.[0]?.text || '';
+  let s = `${FULL[MONTHS[curMonth]]} at a glance: ${wins} win${wins!==1?'s':''} and ${prog} item${prog!==1?'s':''} in progress.`;
+  if(winItem)  s += ` Biggest win: ${winItem.replace(/\.$/,'')}.`;
+  if(progItem) s += ` Still going: ${progItem.replace(/\.$/,'')}.`;
+  if(stall) s += ` ${stall} stall${stall!==1?'s':''} to watch.`;
+  if(coll)  s += ` Collaborated on ${coll} thing${coll!==1?'s':''}.`;
+  return s;
+}
+
+function render(d){
+  // if the model returned a title-like string instead of a real summary, build a fallback
+  const raw = d.summary || '';
+  const looksLikeTitle = raw.length < 80 || !raw.match(/[.!,]/);
+  const summary = looksLikeTitle
+    ? buildSummary(d)
+    : raw;
+  document.getElementById('aiQuote').textContent = summary;
+  const fill = (id, arr) => {
+    const el = document.getElementById(id);
+    if(!arr || !arr.length){ el.innerHTML = '<li class="empty-hint">Nothing here this month.</li>'; return; }
+    el.innerHTML = arr.map(x=>itemRow(x.text, x.source)).join('');
+  };
+  fill('listWins', d.wins);
+  fill('listProg', d.inProgress);
+  fill('listStall', d.stalls);
+  fill('listColl', d.collaboration);
+  fill('listLearned', d.learned);
+
+  // next month (owner/due)
+  const next = document.getElementById('listNext');
+  next.innerHTML = (d.nextMonth||[]).map(x=>itemRow(x.text, [x.owner,x.due].filter(Boolean).join(' · '))).join('') || '<li class="empty-hint">No suggestions.</li>';
+
+  // time allocation
+  document.getElementById('listTime').innerHTML = (d.timeAllocation||[]).map(t=>`
+    <div class="time-row"><div class="time-label">${esc(t.area)}</div>
+    <div class="bar-wrap"><div class="bar-actual" style="width:${Math.max(4,Math.min(100,t.pct))}%"></div></div>
+    <div class="time-nums">${t.pct}%</div></div>`).join('') || '<div class="empty-hint">Not enough data.</div>';
+
+  // timeline
+  document.getElementById('listTimeline').innerHTML = (d.timeline||[]).map(e=>`
+    <div class="tl-item"><span class="tl-dot ${e.flag?'flag':''}"></span>
+    <div><div class="tl-label">${esc(e.label)}</div><div class="tl-meta">${esc(e.date)} · ${esc(e.source)}</div></div></div>`).join('') || '<div class="empty-hint">No events.</div>';
+
+  // goals
+  document.getElementById('listGoals').innerHTML = (d.goals||[]).map(g=>{
+    const risk = (g.status||'').includes('risk');
+    return `<div class="goal"><div class="goal-head"><span class="goal-name" ${editing?'contenteditable="true"':''}>${esc(g.name)}</span>
+      <span class="status ${risk?'warn':'good'}">${risk?'At risk':'On track'} · ${g.pct}%</span></div>
+      <div class="goal-bar-wrap"><div class="goal-bar ${risk?'warn':''}" style="width:${g.pct}%"></div></div>
+      ${g.note?`<div class="goal-foot" ${editing?'contenteditable="true"':''}>${esc(g.note)}</div>`:''}</div>`;
+  }).join('') || '<div class="empty-hint">No suggestions.</div>';
+
+  // stat tiles
+  document.getElementById('stWins').textContent  = (d.wins||[]).length;
+  document.getElementById('stProg').textContent  = (d.inProgress||[]).length;
+  document.getElementById('stColl').textContent  = (d.collaboration||[]).length;
+  document.getElementById('stStall').textContent = (d.stalls||[]).length;
+  document.getElementById('mWins').textContent  = (d.wins||[]).length;
+  document.getElementById('mProg').textContent  = (d.inProgress||[]).length;
+  document.getElementById('mStall').textContent = ((d.stalls||[]).length) + ' open';
+  document.getElementById('mColl').textContent  = (d.collaboration||[]).length;
+}
+
+function toggleEditAll(){
+  editing = !editing;
+  document.getElementById('editBtn').textContent = editing ? 'Done' : 'Edit';
+  document.querySelectorAll('#listWins .txt, #listProg .txt, #listStall .txt, #listColl .txt, #listLearned .txt, #listNext .txt, #listGoals .goal-name, #listGoals .goal-foot')
+    .forEach(el=>el.setAttribute('contenteditable', String(editing)));
+  toast(editing ? 'Edit mode on — click any line to rewrite it.' : 'Saved your edits.');
+}
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg, err){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show' + (err?' err':'');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.className='toast', err?4200:2400);
+}
+
+/* ---------- init ---------- */
+renderRail(); renderStrip(); setTitle();
+generate(); // auto-draft on load
+</script>
+</body>
+</html>
