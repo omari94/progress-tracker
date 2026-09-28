@@ -2,12 +2,29 @@ services:
   tracker:
     build: .
     restart: always
+    labels:
+      - "autoheal=true"
     ports:
       - "8090:8090"
     environment:
       - GROQ_API_KEY=${GROQ_API_KEY}
     volumes:
       - tracker_data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8090/login', timeout=5).status==200 else 1)"]
+      interval: 30s
+      timeout: 8s
+      retries: 3
+      start_period: 15s
+
+  autoheal:
+    image: willfarrell/autoheal:latest
+    restart: always
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=autoheal
+      - AUTOHEAL_INTERVAL=15
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   tracker_data:

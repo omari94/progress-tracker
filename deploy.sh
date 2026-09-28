@@ -13,4 +13,4 @@ echo "🔄 Deploying to EC2..."
 ssh -i ~/.ssh/EC21.pem ubuntu@54.246.157.119 \
   "cd /home/ubuntu/tracker-git && git pull && COMPOSE_BAKE=false docker compose up --build -d"
 
-echo "✅ Done — https://54.246.157.119:8090"
+echo "✅ Done — http://54.246.157.119"

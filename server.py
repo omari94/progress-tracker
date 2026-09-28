@@ -332,7 +332,8 @@ class TrackerHandler(http.server.BaseHTTPRequestHandler):
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     init_db()
-    server = http.server.HTTPServer(("0.0.0.0", PORT), TrackerHandler)
+    server = http.server.ThreadingHTTPServer(("0.0.0.0", PORT), TrackerHandler)
+    server.daemon_threads = True
     print(f"[tracker] Listening on http://0.0.0.0:{PORT}")
     print(f"[tracker] Groq key: {'configured' if GROQ_API_KEY else 'MISSING'}")
     print(f"[tracker] Model: {GROQ_MODEL}")
